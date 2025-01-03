@@ -7,6 +7,9 @@ from .views import (
     TaskViewSet,
     CommentViewSet,
     AttachmentViewSet,
+    LabelViewSet,
+    ActivityViewSet,
+    generate_presigned_upload_url,
 )
 
 router = DefaultRouter()
@@ -16,7 +19,12 @@ router.register(r'lists', BoardListViewSet, basename='boardlist')
 router.register(r'tasks', TaskViewSet, basename='task')
 router.register(r'comments', CommentViewSet, basename='comment')
 router.register(r'attachments', AttachmentViewSet, basename='attachment')
+router.register(r'labels', LabelViewSet, basename='label')
+router.register(r'activities', ActivityViewSet, basename='activity')
+
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('upload/presigned-url/', generate_presigned_upload_url, name='presigned-upload-url'),
+
 ]
