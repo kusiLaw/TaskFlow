@@ -101,6 +101,23 @@ class BoardList(models.Model):
     def __str__(self):
         return f'{self.board.name} - {self.name}'
 
+class Label(models.Model):
+    """Labels/tags for tasks"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='labels')
+    name = models.CharField(max_length=100)
+    color = models.CharField(max_length=7, default='#3B82F6')  # Hex color
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'labels'
+        unique_together = ('project', 'name')
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
 
 class Task(models.Model):
     class Priority(models.TextChoices):
@@ -125,6 +142,7 @@ class Task(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.TODO)
     position = models.IntegerField(default=0)
     
+    labels = models.ManyToManyField(Label, related_name='tasks', blank=True)
     assignees = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name='assigned_tasks',
@@ -181,7 +199,8 @@ class Attachment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='attachments')
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     
-    file = models.FileField(upload_to='attachments/')
+    file = models.FileField(upload_to='attachments/', blank=True, null=True)
+    file_url = models.URLField(max_length=500, blank=True)  # For S3 URLs
     filename = models.CharField(max_length=255)
     file_size = models.IntegerField()  # in bytes
     content_type = models.CharField(max_length=100)
@@ -194,3 +213,46 @@ class Attachment(models.Model):
     
     def __str__(self):
         return self.filename
+    
+    def get_file_url(self):
+        """Get signed URL for the file"""
+        if self.file_url:
+            return self.file_url
+        elif self.file:
+            return self.file.url
+        return None
+    
+class Activity(models.Model):
+    class Action(models.TextChoices):
+        TASK_CREATED = 'task_created', 'Task Created'
+        TASK_UPDATED = 'task_updated', 'Task Updated'
+        TASK_DELETED = 'task_deleted', 'Task Deleted'
+        TASK_MOVED = 'task_moved', 'Task Moved'
+        COMMENT_ADDED = 'comment_added', 'Comment Added'
+        ATTACHMENT_ADDED = 'attachment_added', 'Attachment Added'
+        ASSIGNEE_ADDED = 'assignee_added', 'Assignee Added'
+        ASSIGNEE_REMOVED = 'assignee_removed', 'Assignee Removed'
+        DUE_DATE_SET = 'due_date_set', 'Due Date Set'
+        LABEL_ADDED = 'label_added', 'Label Added'
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='activities')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, null=True, blank=True, related_name='activities')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    
+    action = models.CharField(max_length=50, choices=Action.choices)
+    description = models.TextField()
+    metadata = models.JSONField(default=dict, blank=True)  # Store additional data
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'activities'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['project', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f'{self.user.full_name} - {self.action}'
