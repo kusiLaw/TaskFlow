@@ -4,11 +4,13 @@ import environ
 
 # Initialize environ
 env = environ.Env(
-    DEBUG=(bool, False)
+    DEBUG=(bool,False)
 )
+
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Read .env file
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
