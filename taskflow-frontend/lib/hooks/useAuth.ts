@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { authApi } from '@/lib/api/auth';
+import { authApi } from '@/api/auth';
 
 export function useAuth() {
   const router = useRouter();
