@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Organization, OrganizationMember } from '@/types';
+import { Invitation, Organization, OrganizationMember } from '@/types';
 
 export const organizationsApi = {
   list: async (): Promise<Organization[]> => {
@@ -47,6 +47,13 @@ export const organizationsApi = {
   removeMember: async (orgId: string, memberId: string): Promise<void> => {
     await apiClient.delete(`/organizations/${orgId}/members/${memberId}/`);
   },
+  
+
+  getInvitations: async (orgId: string): Promise<Invitation[]> => {
+    const response = await apiClient.get(`/organizations/${orgId}/invitations/`);
+    return response.data;
+  },
+
 
   leave: async (id: string): Promise<void> => {
     await apiClient.post(`/organizations/${id}/leave/`);
