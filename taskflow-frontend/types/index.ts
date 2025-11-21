@@ -43,3 +43,17 @@ export interface RegisterData {
   first_name: string;
   last_name: string;
 }
+
+export interface Invitation {
+  id: string;
+  email: string;
+  role: 'owner' | 'admin' | 'member' | 'guest';
+  organization: string;
+  organization_name: string;
+  invited_by: User;
+  status: 'pending' | 'accepted' | 'expired';
+  created_at: string;
+  expires_at: string;
+  is_valid: boolean;
+  token: string;
+}
