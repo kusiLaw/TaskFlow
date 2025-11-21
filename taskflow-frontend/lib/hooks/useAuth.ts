@@ -52,7 +52,7 @@ export function useAuth() {
     try {
       const response = await authApi.register({
         ...data,
-        password2: data.password,
+        password: data.password,
       });
       
       localStorage.setItem('accessToken', response.access);

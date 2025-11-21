@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useOrganizationStore } from '@/store/organizationStore';
 import { organizationsApi } from '@/api/organizations';
+import { Organization } from '@/types';
 
 export function useOrganizations() {
   const {
