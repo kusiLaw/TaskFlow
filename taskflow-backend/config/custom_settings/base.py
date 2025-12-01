@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.organizations',
     'apps.projects',
-    'apps.notifications',
+    'apps.notifications'
 ]
 
 MIDDLEWARE = [
