@@ -14,7 +14,7 @@ apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     const orgId = localStorage.getItem('currentOrgId');
-    
+    document.cookie = `accessToken=${token}; path=/`; /// Set cookie for server-side access not secure 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

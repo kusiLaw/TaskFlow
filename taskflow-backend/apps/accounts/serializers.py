@@ -40,7 +40,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         
         # Add user data to response
         data['user'] = UserSerializer(self.user).data
-        
         return data
 
 
