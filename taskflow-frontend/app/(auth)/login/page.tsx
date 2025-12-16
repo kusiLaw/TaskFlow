@@ -21,15 +21,20 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    const result = await login(email, password);
-    console.log('Login result:', result);
-    if (result.success) {
-      router.replace('/dashboard');
-    } else {
-      setError(result.error || 'Login failed');
-    }
+    try {
+      const result = await login(email, password);
 
-    setLoading(false);
+      if (result.success) {
+        router.push('/dashboard');
+ 
+      } else {
+        setError(result.error || 'Login failed');
+      }
+    } catch (err: any) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,6 +71,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1"
+                disabled={loading}
               />
             </div>
 
@@ -80,6 +86,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1"
+                disabled={loading}
               />
             </div>
           </div>
