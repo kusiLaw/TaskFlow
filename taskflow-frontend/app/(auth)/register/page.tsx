@@ -23,6 +23,10 @@ export default function RegisterPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error for this field
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: undefined });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,15 +41,20 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const result = await register(formData);
+    try {
+      const result = await register(formData);
 
-    if (result.success) {
-      router.push('/dashboard');
-    } else {
-      setErrors(result.error);
+      if (result.success) {
+        router.push('/dashboard');
+      } else {
+        setErrors(result.error);
+      }
+    } catch (err: any) {
+      setErrors({ non_field_errors: 'An unexpected error occurred' });
+      console.error('Registration error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -82,6 +91,7 @@ export default function RegisterPage() {
                   value={formData.first_name}
                   onChange={handleChange}
                   className="mt-1"
+                  disabled={loading}
                 />
                 {errors.first_name && (
                   <p className="mt-1 text-sm text-red-600">{errors.first_name}</p>
@@ -98,6 +108,7 @@ export default function RegisterPage() {
                   value={formData.last_name}
                   onChange={handleChange}
                   className="mt-1"
+                  disabled={loading}
                 />
                 {errors.last_name && (
                   <p className="mt-1 text-sm text-red-600">{errors.last_name}</p>
@@ -116,6 +127,7 @@ export default function RegisterPage() {
                 value={formData.email}
                 onChange={handleChange}
                 className="mt-1"
+                disabled={loading}
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
@@ -133,6 +145,7 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={handleChange}
                 className="mt-1"
+                disabled={loading}
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
@@ -150,6 +163,7 @@ export default function RegisterPage() {
                 value={formData.password2}
                 onChange={handleChange}
                 className="mt-1"
+                disabled={loading}
               />
               {errors.password2 && (
                 <p className="mt-1 text-sm text-red-600">{errors.password2}</p>
