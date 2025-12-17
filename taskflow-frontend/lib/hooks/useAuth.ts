@@ -28,7 +28,6 @@ export function useAuth() {
     
     try {
       const userData = await authApi.getCurrentUser();
-      console.log('User loaded:', userData);
       setUser(userData);
       return userData;
     } catch (error: any) {
@@ -48,12 +47,10 @@ export function useAuth() {
     try {
       const response = await authApi.login({ email, password });
       
-      setUser(response.user);
       await loadUser();
       
       return { success: true };
     } catch (error: any) {
-      console.error('Login API error:', error);
       return { 
         success: false, 
         error: error.response?.data?.error || 'Login failed' 
