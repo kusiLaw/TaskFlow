@@ -22,6 +22,9 @@ export function OrganizationSwitcher() {
   const router = useRouter();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+  // Defensive check
+  const orgList = Array.isArray(organizations) ? organizations : [];
+
   return (
     <>
       <DropdownMenu>
@@ -46,30 +49,38 @@ export function OrganizationSwitcher() {
         <DropdownMenuContent className="w-[200px]" align="start">
           <DropdownMenuLabel>Organizations</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {organizations.map((org) => (
-            <DropdownMenuItem
-              key={org.id}
-              onClick={() => {
-                switchOrganization(org);
-                router.push('/dashboard');
-              }}
-              className="cursor-pointer"
-            >
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-2 truncate">
-                  <Avatar className="h-5 w-5">
-                    <AvatarFallback className="text-xs">
-                      {getInitials(org.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="truncate">{org.name}</span>
+          
+          {orgList.length === 0 ? (
+            <div className="px-2 py-1 text-sm text-gray-500">
+              No organizations yet
+            </div>
+          ) : (
+            orgList.map((org) => (
+              <DropdownMenuItem
+                key={org.id}
+                onClick={() => {
+                  switchOrganization(org);
+                  router.push('/dashboard');
+                }}
+                className="cursor-pointer"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center space-x-2 truncate">
+                    <Avatar className="h-5 w-5">
+                      <AvatarFallback className="text-xs">
+                        {getInitials(org.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">{org.name}</span>
+                  </div>
+                  {currentOrganization?.id === org.id && (
+                    <Check className="h-4 w-4 text-blue-600" />
+                  )}
                 </div>
-                {currentOrganization?.id === org.id && (
-                  <Check className="h-4 w-4 text-blue-600" />
-                )}
-              </div>
-            </DropdownMenuItem>
-          ))}
+              </DropdownMenuItem>
+            ))
+          )}
+          
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setCreateDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
