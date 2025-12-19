@@ -12,9 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Building2, LogOut, Settings, User } from 'lucide-react';
+import { Building2, LogOut, Settings, User, FolderKanban } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import Link from 'next/link';
+import { OrganizationSwitcher } from './OrganizationSwitcher';
 
 export function DashboardHeader() {
   const { user, logout } = useAuth();
@@ -29,11 +30,17 @@ export function DashboardHeader() {
             <span className="text-xl font-bold">TaskFlow</span>
           </Link>
 
+          <OrganizationSwitcher />
+
           {currentOrganization && (
-            <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
-              <span>•</span>
-              <span className="font-medium">{currentOrganization.name}</span>
-            </div>
+            <nav className="hidden md:flex items-center space-x-1">
+              <Link href="/dashboard/projects">
+                <Button variant="ghost" size="sm">
+                  <FolderKanban className="h-4 w-4 mr-2" />
+                  Projects
+                </Button>
+              </Link>
+            </nav>
           )}
         </div>
 
