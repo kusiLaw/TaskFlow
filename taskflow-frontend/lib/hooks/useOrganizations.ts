@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useOrganizationStore } from '@/store/organizationStore';
-import { organizationsApi } from '@/api/organizations';
+import { organizationsApi } from '@/lib/api/organizations';
 import { Organization } from '@/types';
 
 export function useOrganizations() {
@@ -15,15 +15,36 @@ export function useOrganizations() {
   } = useOrganizationStore();
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     loadOrganizations();
-  }, []);
+  }, []); // Empty dependency array
 
   const loadOrganizations = async () => {
+    // Extra safety check
+    if (typeof window === 'undefined') return;
+    
     try {
-      const orgs = await organizationsApi.list();
+      let orgs = await organizationsApi.list();
+      
+      if (!Array.isArray(orgs)) {
+        console.warn('Organizations is not an array, attempting to fix...');
+        
+        if (orgs && typeof orgs === 'object') {
+          if ('results' in orgs && Array.isArray(orgs.results)) {
+            orgs = orgs.results;
+          } else {
+            orgs = [];
+          }
+        } else {
+          orgs = [];
+        }
+      }
+      
+      console.log('Processed organizations:', orgs);
       setOrganizations(orgs);
 
-      // Set current organization if stored in localStorage
       const storedOrgId = localStorage.getItem('currentOrgId');
       if (storedOrgId) {
         const current = orgs.find((org) => org.id === storedOrgId);
@@ -37,6 +58,7 @@ export function useOrganizations() {
       }
     } catch (error) {
       console.error('Failed to load organizations:', error);
+      setOrganizations([]);
     }
   };
 
@@ -54,7 +76,7 @@ export function useOrganizations() {
     }
   };
 
-  const updateOrg = async (id: string, data: Partial<any>) => {
+  const updateOrg = async (id: string, data: Partial<Organization>) => {
     try {
       const updated = await organizationsApi.update(id, data);
       updateOrganization(id, updated);
@@ -85,7 +107,7 @@ export function useOrganizations() {
   };
 
   return {
-    organizations,
+    organizations: Array.isArray(organizations) ? organizations : [],
     currentOrganization,
     loadOrganizations,
     createOrganization,
