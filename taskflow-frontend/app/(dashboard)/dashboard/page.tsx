@@ -33,14 +33,14 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* {organizations.map((org) => (
+          {organizations.map((org) => (
             <OrganizationCard
               key={org.id}
               organization={org}
               onSelect={() => switchOrganization(org)}
               isActive={currentOrganization?.id === org.id}
             />
-          ))} */}
+          ))}
         </div>
       )}
     </div>
