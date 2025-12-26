@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Organization } from '@/types';
-import { organizationsApi } from '@/api/organizations';
+import { organizationsApi } from '@/lib/api/organizations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OrganizationGeneralSettings } from '@/components/dashboard/settings/OrganizationGeneralSettings';
 import { MembersList } from '@/components/dashboard/settings/MembersList';
