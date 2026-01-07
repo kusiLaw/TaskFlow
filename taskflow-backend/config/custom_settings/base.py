@@ -100,7 +100,7 @@ DATABASES = {
 #     }
 # }
 
-# Channels
+#Channels
 # CHANNEL_LAYERS = {
 #     'default': {
 #         'BACKEND': 'channels_redis.core.RedisChannelLayer',
@@ -124,7 +124,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'apps.accounts.authentication.CookieJWTAuthentication',  
+        'rest_framework_simplejwt.authentication.JWTAuthentication', # Fallback to header auth
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -134,22 +135,98 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
 
 # JWT Settings
 from datetime import timedelta
 
+
+# CORS
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
+CORS_ALLOW_CREDENTIALS = True
+
+# Cookie settings
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = not DEBUG  # True in production
+SESSION_COOKIE_SAMESITE = 'Lax'  # or 'None' if frontend is on different domain
+
+CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read this
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# CRITICAL: Allow custom headers
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-organization-id',  # Add this custom header
+]
+
+# Also allow exposing headers
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'x-organization-id',
+]
+
+
+
+# JWT Cookie settings
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    # Cookie settings
+    'AUTH_COOKIE': 'access_token',  # Cookie name
+    'AUTH_COOKIE_REFRESH': 'refresh_token',
+    'AUTH_COOKIE_SECURE': not DEBUG,
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_PATH': '/',
+    'AUTH_COOKIE_SAMESITE': 'Lax',
+    'AUTH_COOKIE_DOMAIN': None,  # Set to your domain in production
 }
 
-# CORS
-CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
-CORS_ALLOW_CREDENTIALS = True
+
+# Frontend URL (needed for invitation links)
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
+
+# Email settings - for development use console backend
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@taskflow.com'
+
+# For production, use SMTP:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = env('EMAIL_HOST')
+# EMAIL_PORT = env('EMAIL_PORT', default=587)
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -161,24 +238,46 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# For local development without S3
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+
 # Media files (S3)
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-# AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
-# AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
-# AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
-# AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', default='eu-west-2')
-# AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-# AWS_DEFAULT_ACL = 'private'
-# AWS_S3_OBJECT_PARAMETERS = {
-#     'CacheControl': 'max-age=86400',
-# }
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', default='eu-west-2')
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+AWS_DEFAULT_ACL = 'private'
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+
+AWS_QUERYSTRING_AUTH = True  # Generate signed URLs
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+
+# For local development without S3
+if DEBUG and not AWS_STORAGE_BUCKET_NAME:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery
-# CELERY_BROKER_URL = env('REDIS_URL')
-# CELERY_RESULT_BACKEND = env('REDIS_URL')
+CELERY_BROKER_URL = env('REDIS_URL')
+CELERY_RESULT_BACKEND = env('REDIS_URL')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

@@ -4,6 +4,8 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import Organization, OrganizationMember, Invitation
 from apps.accounts.serializers import UserSerializer
+import uuid
+
 
 
 class OrganizationMemberSerializer(serializers.ModelSerializer):
@@ -21,9 +23,11 @@ class OrganizationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Organization
-        fields = ['id', 'name', 'slug', 'description', 'logo', 'owner', 
-                  'created_at', 'updated_at', 'member_count', 'user_role']
-        read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
+        fields = [
+            'id', 'name', 'slug', 'description', 'avatar', 'owner',
+            'created_at', 'updated_at', 'member_count', 'user_role'
+        ]
+        read_only_fields = ['id', 'slug', 'owner', 'created_at', 'updated_at']
     
     def get_member_count(self, obj):
         return obj.members.count()
@@ -38,30 +42,30 @@ class OrganizationSerializer(serializers.ModelSerializer):
             return membership.role if membership else None
         return None
     
-    def create(self, validated_data):
-        user = self.context['request'].user
+    # def create(self, validated_data):
+    #     user = self.context['request'].user
         
-        # Generate unique slug
-        base_slug = slugify(validated_data['name'])
-        slug = base_slug
-        counter = 1
-        while Organization.objects.filter(slug=slug).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
+    #     # Generate unique slug
+    #     base_slug = slugify(validated_data['name'])
+    #     slug = base_slug
+    #     counter = 1
+    #     while Organization.objects.filter(slug=slug).exists():
+    #         slug = f"{base_slug}-{counter}"
+    #         counter += 1
         
-        validated_data['slug'] = slug
-        validated_data['owner'] = user
+    #     validated_data['slug'] = slug
+    #     validated_data['owner'] = user
         
-        organization = Organization.objects.create(**validated_data)
+    #     organization = Organization.objects.create(**validated_data)
         
-        # Add owner as member
-        OrganizationMember.objects.create(
-            organization=organization,
-            user=user,
-            role=OrganizationMember.Role.OWNER
-        )
+    #     # Add owner as member
+    #     OrganizationMember.objects.create(
+    #         organization=organization,
+    #         user=user,
+    #         role=OrganizationMember.Role.OWNER
+    #     )
         
-        return organization
+    #     return organization
 
 
 class OrganizationDetailSerializer(OrganizationSerializer):
@@ -70,25 +74,32 @@ class OrganizationDetailSerializer(OrganizationSerializer):
     class Meta(OrganizationSerializer.Meta):
         fields = OrganizationSerializer.Meta.fields + ['members']
 
-
 class InvitationSerializer(serializers.ModelSerializer):
     invited_by = UserSerializer(read_only=True)
-    organization_name = serializers.CharField(source='organization.name', read_only=True)
-    is_valid = serializers.BooleanField(read_only=True)
-    
+    organization_name = serializers.CharField(
+        source='organization.name', read_only=True
+    )
+    is_expired = serializers.SerializerMethodField()
+
     class Meta:
         model = Invitation
-        fields = ['id', 'email', 'role', 'organization', 'organization_name',
-                  'invited_by', 'status', 'created_at', 'expires_at', 'is_valid', 'token']
-        read_only_fields = ['id', 'token', 'status', 'invited_by', 'created_at', 'expires_at']
-    
-    def create(self, validated_data):
-        request = self.context['request']
-        validated_data['invited_by'] = request.user
-        validated_data['expires_at'] = timezone.now() + timedelta(days=7)
-        
-        return Invitation.objects.create(**validated_data)
+        fields = [
+            'id', 'email', 'role', 'status', 'token',
+            'invited_by', 'organization_name',
+            'created_at', 'expires_at', 'is_expired'
+        ]
+        read_only_fields = ['id', 'token', 'status', 'created_at', 'expires_at']
 
+    def get_is_expired(self, obj):
+        return not obj.is_valid()
+
+    def validate_email(self, value):
+        return value.lower().strip()
+
+    def create(self, validated_data):
+        validated_data['token'] = str(uuid.uuid4())
+        validated_data['expires_at'] = timezone.now() + timedelta(days=7)
+        return super().create(validated_data)
 
 class AcceptInvitationSerializer(serializers.Serializer):
     token = serializers.UUIDField()
@@ -102,7 +113,6 @@ class AcceptInvitationSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid invitation token.")
         
         return value
-
 
 class UpdateMemberRoleSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=OrganizationMember.Role.choices)
