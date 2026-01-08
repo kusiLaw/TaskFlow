@@ -40,7 +40,6 @@ develop-eggs/
 dist/
 downloads/
 eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -84,8 +83,17 @@ target/
 *.pyc
 __pycache__/
 local_settings.py
-*migrations/*
+migrations/
 
 .env
-*/db.sqlite3
+*.env
+db.sqlite3
 */migrations/*
+node_modules/
+next-env.d.ts
+.env.local
+.next/
+files.zip
+TaskFlow_C*
+/db.sqlite*
+taskflow-backend/.env
